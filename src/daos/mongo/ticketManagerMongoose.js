@@ -17,6 +17,16 @@ class ticketManagerMongoose
             console.log(error.message)
         }
     }
+
+    getTicket = async (tid) => 
+    { 
+        try {
+            const ticket = await ticketModel.findById(tid).populate('products.product').lean();
+            return ticket;    
+            } catch (error) {
+                console.log(error.message)   
+            }
+    }
 }
 
 export default ticketManagerMongoose;

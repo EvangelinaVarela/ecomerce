@@ -13,7 +13,7 @@ const router= Router()
 
 router.use('/api/products', productsRouter)
 //Agregar a carts passportCall('jwt') lo quite para probar desde postman
-router.use('/api/carts',cartsRouter)
+router.use('/api/carts',passportCall('jwt'),cartsRouter)
 router.use('/chat', messageRouter)
 router.use('/api/sessions', sessionRouter)
 router.use('/api/users', usersRouter)
@@ -27,6 +27,5 @@ router.get('/loggerTest', (req, res) => {
     req.logger.error('Log Error!!')
     res.send('EndPoint test logs ')
 })
-
 
 export default router

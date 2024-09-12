@@ -69,7 +69,7 @@ class productManagerMongoose
 
     getProduct = async (idProducto) => { 
         try {
-            const products = await productsModel.findById({_id: idProducto})
+            const products = await productsModel.findById( idProducto).populate('owner').lean()
             return products;    
            } catch (error) {
                console.log(error.message)

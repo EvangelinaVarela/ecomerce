@@ -15,4 +15,16 @@ export default class TicketRepositories{
             return error
         }
     }
+
+    async getTicket(tid)
+    {
+        try
+        {
+            return await this.TicketDao.getTicket(tid)
+        }   
+        catch (error)
+        {
+            return error
+        }
+    }
 }

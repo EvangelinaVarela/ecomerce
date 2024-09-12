@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node src/app.js --mode production"
+    "start": "node src/app.js --mode production",
+    "dev": "node --watch src/app.js --mode development",
+    "test": "mocha src/test/supertest.test.js"
   },
   "type": "module",
   "keywords": [],
@@ -21,6 +23,7 @@
     "express": "^4.19.2",
     "express-handlebars": "^7.1.2",
     "express-session": "^1.18.0",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.3.3",
     "mongoose-paginate-v2": "^1.8.0",
     "multer": "^1.4.5-lts.1",

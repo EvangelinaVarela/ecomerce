@@ -19,6 +19,16 @@ const productsSchema = new Schema({
 })
 productsSchema.plugin(mongoosePaginate)
 
+productsSchema.pre('findById', function() {
+    this.populate('owner.users')
+  })
+
+  
+ productsSchema.pre('find', function() {
+    this.populate('owner.users')
+  })
+  
+
 const productsModel = model('products', productsSchema)
 
 export default productsModel;

@@ -1,6 +1,6 @@
 # Archivos y carpetas innecesarios
 node_modules/
-public/upload/
+/src/upload/
 dist/
 build/
 .cache/

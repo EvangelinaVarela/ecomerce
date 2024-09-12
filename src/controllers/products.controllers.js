@@ -5,15 +5,16 @@ import EErrors from '../service/errors/enums.js'
 
 import {generateProductError} from '../service/errors/info.js'
 import { logger } from '../utils/logger.js'
+import {sendEmail} from '../utils/sendEmail.js'
 
 import { configObject } from '../config/config.js'
 
 const {user_admin} = configObject
 
+
 export default class  ProductCotroller
 {
     constructor(){
-      //  this.service =  productService
      }
 
     getProducts =  async  (req, res)=>{
@@ -103,11 +104,9 @@ export default class  ProductCotroller
         if (usuario.role==='premium') 
         {
            owner = await userService.getUser({email:usuario.email})
-           console.log ('entra  a buscar user premium',owner)
         }
         else{
            owner = await userService.getUser({email:user_admin})
-           console.log ('entra  a buscar user ADMNIN',owner)
         }
 
         const newProduct={
@@ -119,11 +118,7 @@ export default class  ProductCotroller
             status:1, category,owner
         }
     
-    const result = await  productService.addProduct(newProduct)
-    // return res.status(201).json({
-    //     status: 'success',
-    //     payload: result
-    // })
+   const result = await  productService.addProduct(newProduct)
    return res.status(200).send({ status: 'success', payload:('El producto fue ingresado corectamente') })
     }catch (error){
         logger.error(error)
@@ -136,8 +131,7 @@ export default class  ProductCotroller
         {
         const { pid } = req.params
         let  prodToUpdate = req.body
-  
-       
+         
         const producto = await  productService.getProduct(pid)
         if (!producto)
         {
@@ -187,11 +181,9 @@ export default class  ProductCotroller
        
          if (!producto)
          {  
-            console.log('No existe producto')
-             //return res.status(404).send(`No existe el producto con ID ${pid}`);
-             res.status(404).json({ message: 'Producto no encontrado' });
+            return res.status(404).send(`No existe el producto con ID ${pid}`);
          }
-
+        
          const usuario = req.user.user
          let owner =usuario
          //si es premiiun solo puede borrar un producto suyo
@@ -200,20 +192,34 @@ export default class  ProductCotroller
             owner = await userService.getUser({email:usuario.email})
             if (!producto.owner || !producto.owner._id)
             {
-                console.log ('El producto no tiene propietario')
+                logger.info ('El producto no tiene propietario')
             } 
             else
             {
                 if (String(owner._id) !== String(producto.owner._id)){
-                    console.log ('No puede borrar un producto q no le pertenece')
                     return res.status(404).send({ status: 'error', payload:(`No se puede borrar el producto porque no le pertenece`) })
                 }
             }
          }
       
         const result = await  productService.deleteProduct(pid)
+
         if (result.deletedCount===1) 
         {
+            //si producto eliminado era de un usuario es premiun enviar mail
+            if (producto.owner.role==='premium')  
+            {
+                console.log ('Role',producto.owner.role)
+                const subject = 'Se elimino un producto de la tienda'
+                const html = `
+                <p> Hola ${producto.owner.firts_name}, </p>
+                <p> Le informamos que el producto ${producto.title} ha sido eliminado de la tienda</p>  `
+                await sendEmail({mail:  producto.owner.email,
+                    subject,
+                    html
+                })
+            }    
+
             return res.status(200).send({ status: 'success', payload:(`El producto con ID ${pid} fue eliminado corectamente`) })
         }
         else

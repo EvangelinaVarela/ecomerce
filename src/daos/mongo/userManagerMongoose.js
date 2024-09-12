@@ -58,6 +58,36 @@ export class UserManagerMongoose {
       }
     }
 
+    getUsersLastConnection = async ()=>{
+      try
+      {
+          const twoDaysAgo = new Date();
+          twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+          
+          const users = await usersModel.find({
+            last_connection: { $lt: twoDaysAgo },
+          });
+
+          return (users)
+        
+      }catch(error)
+      {
+          console.log(error.message)
+      }
+    }
+
+    deleteUser = async (uid) =>
+      { 
+          try
+          {
+              const result =  await usersModel.deleteOne( {_id: uid.trim()})
+              return result
+          }catch (error)
+          {
+              console.log(error.message)
+          }
+      }
+
   }
 
   export default UserManagerMongoose;

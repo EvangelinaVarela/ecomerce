@@ -13,23 +13,24 @@ const TicketSchema = new Schema({
         ref: 'users'
   },
   products: {
-      type: [{
-          product: {
-              type: Schema.Types.ObjectId,
-              ref: 'products'
-          },
-          quantity: Number
-      }]
-  }
+    type: [{
+        product: {
+            type: Schema.Types.ObjectId,
+            ref: 'products'
+        },
+        quantity: Number
+    }]
+}
+})
+
+TicketSchema.pre('find', function() {
+  this.populate('products.product')
 })
 
 TicketSchema.pre('findOne', function() {
   this.populate('products.product')
 })
 
-TicketSchema.pre('find', function() {
-  this.populate('products.product')
-})
 
 const ticketModel = model('tickets', TicketSchema)
 

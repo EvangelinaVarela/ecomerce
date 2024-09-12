@@ -1,6 +1,6 @@
 import { Router }  from 'express'
 import jwt from 'jsonwebtoken'
-import { productService , userService, cartService} from '../service/index.js'
+import { productService , userService, cartService,ticketService} from '../service/index.js'
 
 import userDTO from '../dto/user.dto.js'
 
@@ -14,6 +14,7 @@ import { logger } from '../utils/logger.js'
 import {uploaderUser} from '../utils/multerUserDocument.js'
 
 const router = Router()
+const {user_admin} = configObject
 
 router.get('/products',passportCall('jwt'), async (req, res)=>{
     let { limit , nropage , disponibilidad, sort } = req.query
@@ -24,9 +25,9 @@ router.get('/products',passportCall('jwt'), async (req, res)=>{
 
     const  { docs, page, hasPrevPage, hasNextPage, prevPage, nextPage } = await (productService.getProducts(limit,nropage, sort));
        
-    const usuario = req.user.user
+     const usuario = req.user.user
     
-    const nombre= usuario.first_name 
+     const nombre= usuario.first_name 
   
     let esAdmin
     if (usuario.role== 'admin' || usuario.role== 'premium') {
@@ -34,15 +35,41 @@ router.get('/products',passportCall('jwt'), async (req, res)=>{
     }
     else
         esAdmin=false
+
+    let roleAdmin
+    if (usuario.role== 'admin') {
+        roleAdmin=true
+    }
+    else
+        roleAdmin=false
+
+        //roleAdmin  
+    res.render('products', {productos:docs,
+        page, 
+        hasNextPage,
+        hasPrevPage,
+        nextPage,
+        prevPage, nombre, role:esAdmin, cart: usuario.cart, id:usuario._id, roleAdmin})
+})
+
+router.get('/', async (req, res)=>{
+    let { limit , nropage , disponibilidad, sort } = req.query
+
+    if (typeof limit === "undefined") { limit = 10;  }
+    if (typeof nropage === "undefined") {nropage = 1;}
+    if (typeof sort === "undefined") { sort = 1; }
+
+    const  { docs, page, hasPrevPage, hasNextPage, prevPage, nextPage } = await (productService.getProducts(limit,nropage, sort));
+        
     res.render('home', {productos:docs,
         page, 
         hasNextPage,
         hasPrevPage,
         nextPage,
-        prevPage, nombre, role:esAdmin, cart: usuario.cart, id:usuario._id})
+        prevPage})
 })
 
-router.get('/', async (req, res)=>{
+router.get('/login', async (req, res)=>{
     res.render('login',{} )
 })
 
@@ -52,7 +79,6 @@ router.get('/register', async (req, res)=>{
 
 router.get('/uploadfile',passportCall('jwt'),async (req, res)=>{
     const usuario = req.user.user
-    console.log (usuario)
     res.render('uploadfile',{user:usuario} )
 })
 
@@ -89,9 +115,16 @@ router.get('/resetPass/:token', async (req, res)=>{
       res.render('carts', {productos})
  })
 
- router.get('/adminproducts',passportCall('jwt'), async (req, res)=>{
+ router.get('/adminproducts', passportCall('jwt'),authorization('admin','premium'), async (req, res)=>{
     const productos= await (productService.getProducts(10,1,1));
     res.render('adminProductos', {productos:productos.docs})
+})
+
+router.get('/ticket/:tid',passportCall('jwt'), async (req, res)=>{
+    const { tid } = req.params
+    const ticket= await (ticketService.getTicket(tid));
+    console.log (ticket)
+    res.render('ticket', {ticket})
 })
 
 router.get('/users',passportCall('jwt'),authorization('admin'), async (req, res)=>{
@@ -112,10 +145,11 @@ router.get('/users',passportCall('jwt'),authorization('admin'), async (req, res)
         prevPage})
 })
 
+//agregar producto al carrito, solo un user o premium pueden.
  router.post('/products', passportCall('jwt'),authorization('user','premium'),async (req, res) => {
     const {prodId , txtCantidad , CartId} = req.body
-    
     const usuario = req.user.user
+
     if (usuario.role==='premium') 
     {
         const owner = await userService.getUser({email:usuario.email})
@@ -124,23 +158,56 @@ router.get('/users',passportCall('jwt'),authorization('admin'), async (req, res)
             return res.status(404).send({ status: 'error', payload:(`No puede agregar un producto propio al carrito`) })
         } 
     }
-    const cart = await cartsManager.getCart(CartId)
-    const result= await (cartsManager.addCart(CartId,prodId,txtCantidad));
+    const cart = await cartService.getCart(CartId)
+    const result= await (cartService.addCart(CartId,prodId,txtCantidad));
     res.redirect('/carts/'+ CartId)
 }); 
-//authorization('admin')
-router.get('/realtimeproducts', passportCall('jwt'), async(req, res)=>{
+//passportCall('jwt'),authorization('admin','premium')
+router.get('/realtimeproducts', passportCall('jwt'),authorization('admin','premium'), async(req, res)=>{
     const { socketServer } = req
 
     socketServer.on('connection', async (socket) => {
+        console.log('Un cliente se ha conectado');
+        const usuario = req.user.user
+  
+        //agrega producto nuevo
+        socket.on('agregarProducto', async data=>{
+            const { title, description,price, thumbnail,code,stock,status, category} = data
+            console.log('Entro a grabar producto')
+            let owner = usuario
+            if (usuario.role==='premium') 
+            {
+               owner = await userService.getUser({email:usuario.email})
+            }
+            else{
+               owner = await userService.getUser({email:user_admin})
+            }
+
+            const newProduct={
+                title,
+                description,
+                price,
+                thumbnail: 'Sin Imagen',
+                code,stock,
+                status:1, category,owner
+            }
+            await productService.addProduct (newProduct)
+         })      
+         
+        socket.on('eliminarProducto', async data=>{
+            const { id } = data
+            const trimmedId = id.trim(); 
+            await productService.deleteProduct(trimmedId);
+        })      
+
        //Enviar productos a todos los clientes
-        const productos= await (productManager.getProducts(10,1,1));
-        socket.emit("cargarProductos",  productos.docs);
+       const productos= await (productService.getProducts(10,1,1));
+       socket.emit("cargarProductos",  productos.docs);
     });
-    const nombre= ''
-     res.render('realtimeproducts', { 
-        nombre
-     })
-   
+
+    res.render('realtimeproducts', { 
+        //productos
+    })
 })
+
 export default router

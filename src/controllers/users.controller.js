@@ -1,6 +1,7 @@
 import { compareSync } from 'bcrypt';
 import {userService} from '../service/index.js'
 import { logger } from '../utils/logger.js'
+import {sendEmail} from '../utils/sendEmail.js'
 
 export default class  UserCotroller
 {
@@ -91,5 +92,62 @@ export default class  UserCotroller
            status: 'success', 
            message: 'Los archivos se subieron correctamente.'
        })
+    }
+
+
+    deleteUsers=  async(req, res) => {
+        try
+        {
+        let deletedCount = 0;
+        const users = await  userService.getUsersLastConnection()
+        for (const user of users) {
+            const subject = 'Aviso de Eliminación de Cuenta'
+            const html = `
+            <p> Hola ${user.firts_name}, </p>
+            <p> Le informamos que tu cuenta ha sido eliminada por inactividad</p>  `
+            await sendEmail({mail:  user.email,
+                subject,
+                html
+            })
+
+            await userService.deleteUser(user._id);
+            deletedCount++; 
+            logger.info(`Usuario ${user.email} eliminado.`);
+        }
+
+        return res.status(200).send({status: 'success', message:  `Se eliminaron correctamente ${deletedCount} usuarios inactivos.`})
+     }catch (error){
+        logger.error(error)
+        return res.status(500).send('Error 500 en el server')
+     }
+    }
+
+    deleteUser=  async(req, res) => {
+        try
+        {
+         const { uid } = req.params
+        
+         const user = await  userService.getUser({_id:uid})
+       
+         if (!user)
+         {  
+            return res.status(404).send({ status: 'error', payload:(`No existe el usuario con ID ${uid}`) })
+         }
+                      
+        const result = await  userService.deleteUser(uid)
+
+        if (result.deletedCount===1) 
+        {
+           return res.status(200).send({ status: 'success', payload:(`El Usuario con ID ${uid} fue eliminado corectamente`) })
+        }
+        else
+        {
+            return res.status(404).send({status: 'error', error: `No se pudo borrar el Usuario ID ${uid}`})
+        }
+       
+     }catch (error){
+        logger.error(error)
+        return res.status(500).send('Error 500 en el server')
+     }
     }
 }

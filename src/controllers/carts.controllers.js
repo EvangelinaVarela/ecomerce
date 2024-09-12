@@ -40,9 +40,7 @@ class CartController
         {
               const { cid , pid } = req.params
               let { quantity } = req.body
-
-              console.log ('DATOS CARRITO',cid , pid ,quantity)
-                
+               
               const carrito= await (cartService.getCart(cid));
                if (!carrito)
                {
@@ -73,7 +71,6 @@ class CartController
     try
     {
         const { cid , pid } = req.params
-        console.log ('Entra a ap/carts/delete')
         const carrito= await (cartService.getCart(cid));
         if (!carrito)
         {

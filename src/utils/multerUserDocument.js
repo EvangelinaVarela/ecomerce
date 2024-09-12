@@ -26,7 +26,7 @@ const storage = multer.diskStorage({
       if (file.fieldname === 'documents'){
         folder = `documents`; 
       }
-      const uploadFolder =__dirname +'/public/upload/'+ `${req.params.uid}/${folder}`; 
+      const uploadFolder =__dirname +'/upload/'+ `${req.params.uid}/${folder}`; 
  
       if (!fs.existsSync(uploadFolder)) {
         fs.mkdirSync(uploadFolder, { recursive: true });
@@ -45,5 +45,3 @@ const storage = multer.diskStorage({
         next()
     }
 })
-
-

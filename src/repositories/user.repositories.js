@@ -41,6 +41,31 @@ export default class UserRepositories{
         }
     }
 
+    async getUsersLastConnection()
+    {
+        try
+        {
+            return await this.UserDao.getUsersLastConnection()
+        }   
+        catch (error)
+        {
+            return error
+        }
+    }
+    
+    async deleteUser(uid)
+    {
+        try
+        {
+            return await this.UserDao.deleteUser(uid)
+        }   
+        catch (error)
+        {
+            return error
+        }
+    }
+    
+
     async getUserDTO(email)
     {
         try

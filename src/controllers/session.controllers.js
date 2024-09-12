@@ -120,7 +120,6 @@ class UserCotroller
 
         const token = generateToken({UserExist, expiresIn: '1h'})
                
-        console.log ('TOKEN ', token)
         const subject = 'Restablecer contraseña'
         // const html = `
         //                 <p> Hola ${UserExist.firts_name}, </p>

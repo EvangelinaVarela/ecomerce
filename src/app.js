@@ -22,7 +22,6 @@ import { initializePassport } from './config/passport.config.js'
 import { handleErrors } from './middlewares/errors/index.js'
 
 import { addLogger , logger } from './utils/logger.js'
-import { compareSync } from 'bcrypt'
 
 const {port}= configObject
 
